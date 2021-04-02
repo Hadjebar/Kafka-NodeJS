@@ -7,7 +7,6 @@ const kafka = new Kafka({
 
 const topic = 'auth-NearBy'
 const consumer = kafka.consumer({ groupId: 'auth-group' })
-
 const producer = kafka.producer();
 
 async function run() {
@@ -16,19 +15,28 @@ async function run() {
 
   await consumer.run({
     eachMessage: async ({ topic, partition, message }) => {
+      
       const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`
-      console.log(`- ${prefix} ${message.key}#${message.value}`)
+      console.log(`--------------------> ${prefix} ${message.key}#${message.value}`)
 
       const payload = JSON.parse(message.value.toString());
 
       // setTimeout(() => {
-      producer.send({
-        topic: 'auth-response',
-        messages: [
-          { value: `auth de l'utilsateur ${payload.user.name} pour le module ${payload.course} !` }
-        ]
-      })
-      // }, 3000);
+
+        var sendMessage = async () => {
+          await producer.connect()
+          await producer.send({
+            topic: 'auth-response',
+            messages: [
+              { value: `auth de l'utilsateur ${payload.user.name} pour le module ${payload.course} !` }
+            ]
+          })
+          await producer.disconnect()
+        }
+        
+        sendMessage();
+      
+      
     },
   })
 }
